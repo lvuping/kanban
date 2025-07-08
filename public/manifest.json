@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Team Kanban Board",
+  "version": "1.0.0",
+  "description": "Internal kanban board for team collaboration",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Team Kanban Board"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}
