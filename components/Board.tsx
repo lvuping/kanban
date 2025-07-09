@@ -91,10 +91,18 @@ export function Board() {
 
     if (sourceColumnId === destColumnId) {
       const oldIndex = sourceColumn.taskIds.indexOf(activeTaskId);
-      const newIndex = destColumn.taskIds.indexOf(overId);
+      let newIndex = destColumn.taskIds.indexOf(overId);
+      
+      // If overId is the column ID itself, it means we're dropping at the end
+      if (newIndex === -1 && overId === destColumnId) {
+        newIndex = destColumn.taskIds.length;
+      }
       
       if (oldIndex !== newIndex && newIndex !== -1) {
-        await ChromeStorage.moveTask(board.id, activeTaskId, sourceColumnId, destColumnId, newIndex);
+        // When moving within same column, we need to adjust the index
+        // if we're moving the item to a position after its current position
+        const adjustedIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
+        await ChromeStorage.moveTask(board.id, activeTaskId, sourceColumnId, destColumnId, adjustedIndex);
       }
     } else {
       const newIndex = destColumn.taskIds.indexOf(overId);
@@ -120,42 +128,51 @@ export function Board() {
     const sourceColumnId = activeTask.columnId;
     let destColumnId = overId;
 
+    // Check if we're over a task or a column
     if (board.tasks[overId]) {
       destColumnId = board.tasks[overId].columnId;
     }
 
-    if (sourceColumnId !== destColumnId) {
-      setBoard(prevBoard => {
-        if (!prevBoard) return null;
+    // Update the preview position while dragging
+    setBoard(prevBoard => {
+      if (!prevBoard) return null;
 
-        const newBoard = { 
-          ...prevBoard,
-          columns: prevBoard.columns.map(col => ({ ...col, taskIds: [...col.taskIds] })),
-          tasks: { ...prevBoard.tasks }
-        };
-        
-        const sourceColumn = newBoard.columns.find(col => col.id === sourceColumnId);
-        const destColumn = newBoard.columns.find(col => col.id === destColumnId);
+      const newBoard = { 
+        ...prevBoard,
+        columns: prevBoard.columns.map(col => ({ ...col, taskIds: [...col.taskIds] })),
+        tasks: { ...prevBoard.tasks }
+      };
+      
+      const sourceColumn = newBoard.columns.find(col => col.id === sourceColumnId);
+      const destColumn = newBoard.columns.find(col => col.id === destColumnId);
 
-        if (!sourceColumn || !destColumn) return prevBoard;
+      if (!sourceColumn || !destColumn) return prevBoard;
 
-        sourceColumn.taskIds = sourceColumn.taskIds.filter(id => id !== activeTaskId);
-        
+      // Remove from source
+      sourceColumn.taskIds = sourceColumn.taskIds.filter(id => id !== activeTaskId);
+      
+      // Add to destination at correct position
+      if (board.tasks[overId] && destColumnId === destColumn.id) {
+        // Insert before the task we're hovering over
         const overTaskIndex = destColumn.taskIds.indexOf(overId);
         if (overTaskIndex !== -1) {
           destColumn.taskIds.splice(overTaskIndex, 0, activeTaskId);
         } else {
           destColumn.taskIds.push(activeTaskId);
         }
+      } else {
+        // Add to the end of the column
+        destColumn.taskIds.push(activeTaskId);
+      }
 
-        newBoard.tasks[activeTaskId] = {
-          ...newBoard.tasks[activeTaskId],
-          columnId: destColumnId,
-        };
+      // Update task's column
+      newBoard.tasks[activeTaskId] = {
+        ...newBoard.tasks[activeTaskId],
+        columnId: destColumnId,
+      };
 
-        return newBoard;
-      });
-    }
+      return newBoard;
+    });
   };
 
   const handleAddTask = (columnId: string) => {
