@@ -60,23 +60,32 @@ export function Board() {
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     
-    if (!over || !board) return;
+    setActiveTask(null);
+    
+    if (!over || !board) {
+      await loadBoard();
+      return;
+    }
 
     const activeTaskId = active.id as string;
     const overId = over.id as string;
 
-    const activeTask = board.tasks[activeTaskId];
+    const state = await ChromeStorage.getState();
+    const currentBoard = state.boards[board.id];
+    if (!currentBoard) return;
+
+    const activeTask = currentBoard.tasks[activeTaskId];
     if (!activeTask) return;
 
     const sourceColumnId = activeTask.columnId;
     let destColumnId = overId;
 
-    if (board.tasks[overId]) {
-      destColumnId = board.tasks[overId].columnId;
+    if (currentBoard.tasks[overId]) {
+      destColumnId = currentBoard.tasks[overId].columnId;
     }
 
-    const sourceColumn = board.columns.find(col => col.id === sourceColumnId);
-    const destColumn = board.columns.find(col => col.id === destColumnId);
+    const sourceColumn = currentBoard.columns.find(col => col.id === sourceColumnId);
+    const destColumn = currentBoard.columns.find(col => col.id === destColumnId);
 
     if (!sourceColumn || !destColumn) return;
 
@@ -86,17 +95,15 @@ export function Board() {
       
       if (oldIndex !== newIndex && newIndex !== -1) {
         await ChromeStorage.moveTask(board.id, activeTaskId, sourceColumnId, destColumnId, newIndex);
-        await loadBoard();
       }
     } else {
       const newIndex = destColumn.taskIds.indexOf(overId);
       const finalIndex = newIndex === -1 ? destColumn.taskIds.length : newIndex;
       
       await ChromeStorage.moveTask(board.id, activeTaskId, sourceColumnId, destColumnId, finalIndex);
-      await loadBoard();
     }
-
-    setActiveTask(null);
+    
+    await loadBoard();
   };
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -121,14 +128,25 @@ export function Board() {
       setBoard(prevBoard => {
         if (!prevBoard) return null;
 
-        const newBoard = { ...prevBoard };
+        const newBoard = { 
+          ...prevBoard,
+          columns: prevBoard.columns.map(col => ({ ...col, taskIds: [...col.taskIds] })),
+          tasks: { ...prevBoard.tasks }
+        };
+        
         const sourceColumn = newBoard.columns.find(col => col.id === sourceColumnId);
         const destColumn = newBoard.columns.find(col => col.id === destColumnId);
 
         if (!sourceColumn || !destColumn) return prevBoard;
 
         sourceColumn.taskIds = sourceColumn.taskIds.filter(id => id !== activeTaskId);
-        destColumn.taskIds.push(activeTaskId);
+        
+        const overTaskIndex = destColumn.taskIds.indexOf(overId);
+        if (overTaskIndex !== -1) {
+          destColumn.taskIds.splice(overTaskIndex, 0, activeTaskId);
+        } else {
+          destColumn.taskIds.push(activeTaskId);
+        }
 
         newBoard.tasks[activeTaskId] = {
           ...newBoard.tasks[activeTaskId],

@@ -4,9 +4,9 @@ const STORAGE_KEY = 'kanban-board-state';
 
 export class ChromeStorage {
   static async getState(): Promise<KanbanState> {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
+    if (typeof window !== 'undefined' && window.chrome?.storage) {
       return new Promise((resolve) => {
-        chrome.storage.local.get([STORAGE_KEY], (result) => {
+        window.chrome!.storage!.local.get([STORAGE_KEY], (result) => {
           const state = result[STORAGE_KEY] || this.getDefaultState();
           resolve(state);
         });
@@ -18,9 +18,9 @@ export class ChromeStorage {
   }
 
   static async setState(state: KanbanState): Promise<void> {
-    if (typeof chrome !== 'undefined' && chrome.storage) {
+    if (typeof window !== 'undefined' && window.chrome?.storage) {
       return new Promise((resolve) => {
-        chrome.storage.local.set({ [STORAGE_KEY]: state }, () => {
+        window.chrome!.storage!.local.set({ [STORAGE_KEY]: state }, () => {
           resolve();
         });
       });
