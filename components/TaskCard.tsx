@@ -3,15 +3,16 @@
 import { Task } from '@/lib/types';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Edit, Trash2, Clock, User } from 'lucide-react';
+import { GripVertical, Edit, Trash2, Clock, User, Check } from 'lucide-react';
 
 interface TaskCardProps {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
+  onToggleComplete?: (taskId: string) => void;
 }
 
-export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+export function TaskCard({ task, onEdit, onDelete, onToggleComplete }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -38,6 +39,8 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
       style={style}
       className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-3 ${
         isDragging ? 'opacity-50' : ''
+      } ${
+        task.completed ? 'opacity-60' : ''
       }`}
     >
       <div className="flex items-start gap-2">
@@ -50,10 +53,14 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         </div>
         
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-gray-900 mb-1">{task.title}</h3>
+          <h3 className={`font-medium mb-1 ${
+            task.completed ? 'text-gray-500 line-through' : 'text-gray-900'
+          }`}>{task.title}</h3>
           
           {task.description && (
-            <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+            <p className={`text-sm mb-2 ${
+              task.completed ? 'text-gray-400 line-through' : 'text-gray-600'
+            }`}>{task.description}</p>
           )}
           
           <div className="flex items-center gap-2 flex-wrap">
@@ -80,6 +87,17 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
         </div>
         
         <div className="flex items-center gap-1">
+          {onToggleComplete && (
+            <button
+              onClick={() => onToggleComplete(task.id)}
+              className={`p-1 hover:bg-gray-100 rounded ${
+                task.completed ? 'text-green-600' : 'text-gray-400'
+              }`}
+              title={task.completed ? 'Mark as incomplete' : 'Mark as complete'}
+            >
+              <Check className="h-4 w-4" />
+            </button>
+          )}
           <button
             onClick={() => onEdit(task)}
             className="p-1 hover:bg-gray-100 rounded"

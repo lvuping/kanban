@@ -192,6 +192,16 @@ export function Board() {
     setIsTaskDialogOpen(false);
   };
 
+  const handleToggleComplete = async (taskId: string) => {
+    if (!board) return;
+    
+    const task = board.tasks[taskId];
+    if (!task) return;
+    
+    await ChromeStorage.updateTask(board.id, taskId, { completed: !task.completed });
+    await loadBoard();
+  };
+
   if (!board) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
@@ -226,6 +236,7 @@ export function Board() {
                     onAddTask={handleAddTask}
                     onEditTask={handleEditTask}
                     onDeleteTask={handleDeleteTask}
+                    onToggleComplete={handleToggleComplete}
                   />
                 );
               })}

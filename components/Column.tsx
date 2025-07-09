@@ -12,15 +12,18 @@ interface ColumnProps {
   onAddTask: (columnId: string) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
+  onToggleComplete?: (taskId: string) => void;
 }
 
-export function Column({ column, tasks, onAddTask, onEditTask, onDeleteTask }: ColumnProps) {
-  const { setNodeRef } = useDroppable({
+export function Column({ column, tasks, onAddTask, onEditTask, onDeleteTask, onToggleComplete }: ColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({
     id: column.id,
   });
 
   return (
-    <div className="bg-gray-50 rounded-lg p-4 min-h-[500px] w-80">
+    <div className={`bg-gray-50 rounded-lg p-4 min-h-[500px] w-80 transition-all ${
+      isOver ? 'ring-2 ring-blue-400 bg-blue-50' : ''
+    }`}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div
@@ -49,6 +52,7 @@ export function Column({ column, tasks, onAddTask, onEditTask, onDeleteTask }: C
               task={task}
               onEdit={onEditTask}
               onDelete={onDeleteTask}
+              onToggleComplete={onToggleComplete}
             />
           ))}
         </SortableContext>
